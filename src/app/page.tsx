@@ -19,18 +19,21 @@ export default function Home() {
   const [documents, setDocuments] = useState<DocumentRow[]>(DEMO_MODE ? DEMO_DOCUMENTS : []);
   const [uploading, setUploading] = useState(false);
 
-  const refresh = useCallback(async () => {
-    if (!token) return;
-    try {
-      setDocuments(await listDocuments(token));
-    } catch {
-      /* silent — surfaced elsewhere */
-    }
-  }, [token]);
-
+  // Load the user's documents once the anonymous session is established.
   useEffect(() => {
-    if (ready && token) refresh();
-  }, [ready, token, refresh]);
+    if (!ready || !token) return;
+    let active = true;
+    listDocuments(token)
+      .then((docs) => {
+        if (active) setDocuments(docs);
+      })
+      .catch(() => {
+        /* silent — surfaced elsewhere */
+      });
+    return () => {
+      active = false;
+    };
+  }, [ready, token]);
 
   const handleUpload = useCallback(
     async (files: File[]) => {

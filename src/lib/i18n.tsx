@@ -5,7 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -48,7 +48,7 @@ const dict = {
     en: "Add a document first to get started.",
   },
   "chat.hint": {
-    fr: "Réponses sourcées · cliquez une source pour lire le passage exact",
+    fr: "Réponses sourcées · cliquez sur une source pour lire le passage exact",
     en: "Sourced answers · click a source to read the exact passage",
   },
   "chat.empty.title": { fr: "Interrogez vos documents", en: "Query your documents" },
@@ -122,24 +122,42 @@ interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("fr");
+// The chosen language lives in localStorage — an external store, read through
+// useSyncExternalStore so the server renders FR and the client swaps to the
+// saved choice on hydration without a mismatch.
+const LANG_KEY = "lang";
+const langListeners = new Set<() => void>();
 
-  useEffect(() => {
-    // Default is FR; only a previously saved choice overrides it.
-    const saved = localStorage.getItem("lang");
-    if (saved === "fr" || saved === "en") {
-      setLangState(saved);
-    }
-  }, []);
+function subscribeLang(onChange: () => void): () => void {
+  langListeners.add(onChange);
+  // Keeps tabs in sync when the choice changes elsewhere.
+  window.addEventListener("storage", onChange);
+  return () => {
+    langListeners.delete(onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function getLangSnapshot(): Lang {
+  const saved = localStorage.getItem(LANG_KEY);
+  return saved === "fr" || saved === "en" ? saved : "fr";
+}
+
+/** Default is FR; only a previously saved choice overrides it. */
+function getLangServerSnapshot(): Lang {
+  return "fr";
+}
+
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const lang = useSyncExternalStore(subscribeLang, getLangSnapshot, getLangServerSnapshot);
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {
-    setLangState(next);
-    localStorage.setItem("lang", next);
+    localStorage.setItem(LANG_KEY, next);
+    for (const listener of langListeners) listener();
   }, []);
 
   const t = useCallback(

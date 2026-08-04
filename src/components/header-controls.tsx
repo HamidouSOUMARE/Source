@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,11 +9,18 @@ import { useI18n, type Lang } from "@/lib/i18n";
 
 const LANGS: Lang[] = ["fr", "en"];
 
+// `mounted` guards against a server/client icon mismatch: the resolved theme is
+// only known in the browser. Read as an external store so no effect is needed.
+const subscribeNever = () => () => {};
+
 export function HeaderControls() {
   const { resolvedTheme, setTheme } = useTheme();
   const { lang, setLang, t } = useI18n();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
 
   const isDark = (resolvedTheme ?? "dark") !== "light";
 
