@@ -131,8 +131,10 @@ export async function POST(req: Request) {
             send({ type: "text", text: delta.text });
           } else if (delta.type === "citations_delta") {
             const cit = delta.citation;
-            if (cit.type === "content_block_location") {
-              const chunk = candidates[cit.start_block_index];
+            // One document per chunk → `document_index` identifies the chunk, and
+            // `cited_text` is the exact quoted passage rather than the whole chunk.
+            if (cit.type === "char_location") {
+              const chunk = candidates[cit.document_index];
               if (chunk) {
                 send({
                   type: "citation",
@@ -141,7 +143,7 @@ export async function POST(req: Request) {
                     documentId: chunk.documentId,
                     filename: chunk.filename,
                     page: chunk.page,
-                    citedText: cit.cited_text,
+                    citedText: cit.cited_text.trim(),
                   },
                 });
               }

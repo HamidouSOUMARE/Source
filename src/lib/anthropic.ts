@@ -37,9 +37,11 @@ Rules:
 }
 
 /**
- * Builds the Messages API params. Each retrieved chunk becomes one citable
- * content block inside a single "document" — so a citation's block index maps
- * 1:1 back to `chunks[index]` for precise source attribution.
+ * Builds the Messages API params. Each retrieved chunk becomes its own plain-text
+ * "document", so citations come back as `char_location` — the exact sentences the
+ * answer relies on, not the whole chunk (which is what a single document made of
+ * custom content blocks would give). A citation's `document_index` maps 1:1 back
+ * to `chunks[index]` for source attribution.
  */
 export function buildMessages(
   question: string,
@@ -54,15 +56,16 @@ export function buildMessages(
     {
       role: "user",
       content: [
-        {
-          type: "document",
+        ...chunks.map((c) => ({
+          type: "document" as const,
           source: {
-            type: "content",
-            content: chunks.map((c) => ({ type: "text" as const, text: c.content })),
+            type: "text" as const,
+            media_type: "text/plain" as const,
+            data: c.content,
           },
-          title: "Extraits des documents",
+          title: c.page ? `${c.filename} — p. ${c.page}` : c.filename,
           citations: { enabled: true },
-        },
+        })),
         {
           type: "text",
           text: prompt,
