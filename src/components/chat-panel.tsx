@@ -409,22 +409,37 @@ function SourceDialog({ source, onClose }: { source: Source | null; onClose: () 
   const { t } = useI18n();
   return (
     <Dialog open={!!source} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display text-xl">
+      {/* Flex column + internal scroll: the header stays put and only the quoted
+          passage scrolls, however long the citation is. */}
+      <DialogContent className="flex max-h-[85dvh] flex-col gap-0 p-0 sm:max-w-lg">
+        {/* pr-12 reserves room for the close button so long filenames never run under it. */}
+        <DialogHeader className="flex-row items-start gap-3 border-b border-border p-5 pr-12">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-soft)]">
             <Quote className="size-4 text-brand" />
-            {source?.filename}
-            {source?.page != null && (
-              <span className="font-mono text-xs font-normal text-muted-foreground">
-                {t("source.page", { n: source.page })}
-              </span>
-            )}
-          </DialogTitle>
-          <DialogDescription>{t("source.subtitle")}</DialogDescription>
+          </span>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <DialogTitle
+              className="break-words font-display text-lg leading-snug"
+              title={source?.filename}
+            >
+              {source?.filename}
+            </DialogTitle>
+            <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+              {source?.page != null && (
+                <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+                  {t("source.page", { n: source.page })}
+                </span>
+              )}
+              <span>{t("source.subtitle")}</span>
+            </DialogDescription>
+          </div>
         </DialogHeader>
-        <blockquote className="border-l-2 border-brand bg-[var(--brand-soft)] py-3 pl-4 pr-2 font-serif text-[15px] italic leading-7">
-          {source?.citedText}
-        </blockquote>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          <blockquote className="whitespace-pre-wrap break-words rounded-r-md border-l-2 border-brand bg-[var(--brand-soft)] px-4 py-3 font-serif text-[15px] italic leading-7">
+            {source?.citedText}
+          </blockquote>
+        </div>
       </DialogContent>
     </Dialog>
   );
