@@ -24,9 +24,11 @@ Question ─▶ embed (Voyage) → match_chunks (pgvector, top-6)
         └─▶ réponse streamée (NDJSON) + sources cliquables (passage + page)
 ```
 
-Chaque chunk récupéré est passé à Claude comme un **bloc citable** : l'index de
-citation renvoyé par l'API correspond 1:1 au chunk, ce qui donne une
-attribution de source précise (fichier + page + texte exact cité).
+Chaque chunk récupéré est passé à Claude comme un **document citable** distinct :
+l'API renvoie alors des citations `char_location`, c'est-à-dire les phrases
+exactes sur lesquelles la réponse s'appuie — et non le chunk entier. L'index de
+document remonte 1:1 au chunk, ce qui donne une attribution de source précise
+(fichier + page + passage exact cité).
 
 ## Configuration
 
