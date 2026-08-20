@@ -86,3 +86,7 @@ src/
     ├── session.ts client.ts       # auth anonyme + appels API (stream NDJSON)
     └── types.ts
 ```
+
+## Licence
+
+MIT — voir [LICENSE](LICENSE).
